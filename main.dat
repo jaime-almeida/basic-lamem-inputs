@@ -1,0 +1,773 @@
+# ----------------------------------------------------------------------------------------------------------------------
+# A basic parameter file for a subduction zone model which includes an oceanic plateau
+# ----------------------------------------------------------------------------------------------------------------------
+
+# The organization and comments of this script are mostly taken 
+# from the default input file supplied with the LaMEM code. 
+
+# This code is exceedingly well documented and most issues are explained within the source files.
+
+#===============================================================================
+# Grid & discretization parameters
+#===============================================================================
+
+# Constant grid in x-direction
+	nel_x   = 256         # number of elements along the x axis
+	coord_x = -2000 2000  # minimum and maximum x-axis values
+
+# Constant grid in y
+	nel_y = 192           # number of elements along the y axis
+	coord_y = -1500 1500  # minimum and maximum y axis values
+	
+# Constant grid in z-direction
+	nel_z = 96            # number of elements along the z axis
+	coord_z = -660 50     # minimum and maximum z axis values
+
+#===============================================================================
+# Scaling
+#===============================================================================
+
+	units = geo
+
+	unit_temperature = 1000
+	unit_length      = 1e3
+	unit_viscosity   = 1e20
+	unit_stress      = 1e9
+	
+
+#===============================================================================
+# Time stepping parameters
+#===============================================================================
+
+	time_end  = 2000    # simulation end time
+	dt        = 0.01    # time step
+	dt_min    = 0.0001  # minimum time step (does not converge if a lower value is attempted)
+	dt_max    = 0.1  	# maximum time step
+	CFL       = 0.5   	# CFL (Courant-Friedrichs-Lewy) criterion
+	nstep_max = 10000   # maximum allowed number of steps (lower bound: time_end/dt_max)
+	nstep_out = 25      # save output every n steps
+	nstep_out = 1000    # save restart database every n steps
+
+
+#===============================================================================
+# Boundary conditions
+#===============================================================================
+
+# Default conditions on all the boundaries:
+# * (mechanical): free-slip with zero normal velocity
+# * (thermal)   : zero heat flux
+
+# NO Free surface top boundary flag
+
+	open_top_bound = 1
+
+# No-slip boundary flag mask (left right front back bottom top)
+
+	noslip = 0 0 0 0 0 0
+
+# Temperature on the top & bottom boundaries
+
+	temp_top = 20
+	temp_bot = 1500.0;
+
+#===============================================================================
+# NO Free surface
+#===============================================================================
+
+	surf_use        = 1                # free surface activation flag
+	surf_corr_phase = 1                # air phase ratio correction flag (due to surface position)
+	surf_level      = 0.0              # initial level
+	surf_air_phase  = 17               # phase ID of sticky air layer
+	surf_max_angle  = 45.0             # maximum angle with horizon (smoothed if larger)
+
+	
+#===============================================================================
+# Solution parameters & controls
+#===============================================================================
+
+	gravity        = 0.0 0.0 -9.81  # gravity vector
+	FSSA           = 1.0            # free surface stabilization parameter [0 - 1]
+	shear_heat_eff = 1.0            # shear heating efficiency parameter   [0 - 1]
+	Adiabatic_Heat = 1.0
+	act_temp_diff  = 1              # temperature diffusion activation flag
+
+	act_p_shift    = 1              # pressure shift activation flag (zero pressure in the top cell layer)
+	init_guess     = 1              # initial guess flag
+	p_litho_visc   = 1              # use lithostatic pressure for creep laws
+	p_litho_plast  = 1              # use lithostatic pressure for plasticity
+	p_lim_plast    = 0              # limit pressure at first iteration for plasticity
+	jac_mat_free   = 0              # matrix-free closed-form jacobian
+
+	eta_min        = 1e19           # viscosity upper bound
+	eta_max        = 1e24           # viscosity lower limit
+	eta_ref        = 1e21           # reference viscosity (initial guess)
+	DII_ref        = 1e-15          # background (reference) strain-rate
+	
+	min_cohes      = 1e3            # ch lower bound
+	# min_fric       = 1            # fr lower bound
+	tau_ult        = 900e6          # ultimate yield stress
+	quasi_harm_avg = 1              # quasi-harmonic averaging regularization flag (plasticity)
+
+#===============================================================================
+# Model setup & advection
+#===============================================================================
+
+	msetup         = files             # setup type
+	nmark_x        = 3                 # markers per cell in x-direction
+	nmark_y        = 3                 # ...                 y-direction
+	nmark_z        = 3                 # ...                 z-direction
+	rand_noise     = 1                 # random noise flag
+	bg_phase       = 1                 # background phase ID
+	save_mark      = 0                 # save marker to disk flag
+	mark_load_file = ./markers/mdb
+
+	advect         = rk2               # advection scheme
+	interp         = stag              # velocity interpolation scheme
+	mark_ctrl      = subgrid           # marker control type
+	nmark_lim      = 27 64             # min/max number per cell
+	nmark_sub      = 3                 # max number of same phase markers per subcell (subgrid marker control)
+
+   
+#===============================================================================
+# Phase grouping
+#===============================================================================
+
+
+	<PhaseAggStart>
+		name     = _subducting  # phase aggregate output vector name
+		numPhase = 4      	    # number of phases to aggregate
+		phaseID  = 1 2 5 6 		# list of phase IDs to aggregate
+	<PhaseAggEnd>
+
+	<PhaseAggStart>
+		name     = _overriding   # phase aggregate output vector name
+		numPhase = 4       	     # number of phases to aggregate
+		phaseID  = 3 4 7 8		 # list of phase IDs to aggregate
+	<PhaseAggEnd>
+	
+	<PhaseAggStart>
+		name     = _plateau  	 	# phase aggregate output vector name
+		numPhase = 5       	 	    # number of phases to aggregate
+		phaseID  = 11 12 13 14 15	# list of phase IDs to aggregate
+	<PhaseAggEnd>
+
+	<PhaseAggStart>
+		name     = _arc 	# phase aggregate output vector name
+		numPhase = 2       	# number of phases to aggregate
+		phaseID  = 9 10 	# list of phase IDs to aggregate
+	<PhaseAggEnd>	
+	
+	
+
+#===============================================================================
+# Output variables
+#===============================================================================
+
+	out_file_name       = name_of_your_output_file # output file name
+	out_pvd             = 1                        # activate writing .pvd file (PARAVIEW files)
+	out_phase           = 1
+	out_density         = 1
+	out_visc_total      = 1
+	out_visc_creep      = 1
+	out_visc_plast      = 1
+	out_velocity        = 1
+	out_pressure        = 1
+	out_eff_press       = 1
+	out_temperature     = 1
+	out_dev_stress      = 1
+	out_j2_dev_stress   = 1
+	out_strain_rate     = 1
+	out_j2_strain_rate  = 1
+	out_plast_strain    = 1
+	out_plast_dissip    = 1
+	out_moment_res      = 1
+	out_cont_res        = 1
+	out_energ_res       = 1
+
+# Free surface output options (can be activated only if surface tracking is enabled)
+
+	out_surf            = 1 # activate surface output
+	out_surf_pvd        = 1 # activate writing .pvd file
+	out_surf_velocity   = 1
+	out_surf_topography = 1
+	out_surf_amplitude  = 1
+
+# AVD phase viewer output options (requires activation)
+
+	out_avd     = 1 # activate AVD phase output
+	out_avd_pvd = 1 # activate writing .pvd file
+	out_avd_ref = 3 # AVD grid refinement factor
+
+
+
+#===============================================================================
+# Material phase parameters
+#===============================================================================
+	
+	
+	# Define the strain softening behaviour
+	<SofteningStart>
+		ID   = 0   # softening law ID
+		APS1 = 0.1 # begin of softening APS
+		APS2 = 0.6 # end of softening APS
+		A    = 0.99 # reduction ratio
+	<SofteningEnd>
+	
+	
+  	# --------------------------
+	# UPPER MANTLE [0]
+  	# --------------------------
+	<MaterialStart>
+		ID 			=	0		# phase id  [-]
+		rho        	= 	3300	# density [kg/m3]
+		alpha  	 	= 	3e-5 	# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+		k			=	3		# conductivity
+		Cp			= 	1050		# heat capacity
+		
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+		
+	<MaterialEnd>
+
+ 
+ 	# --------------------------
+	#  SUBDUCTING PLATE RIDGE CRUST
+	# --------------------------
+	<MaterialStart>
+		ID 			=	1			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Maryland_strong_diabase-Mackwell_et_al_1998
+		
+		ch			=	5e6		# cohesion [MPa]
+		fr 			=	0  			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+			
+	<MaterialEnd>
+	
+	# --------------------------
+	#  SUBDUCTING PLATE RIDGE MANTLE
+	# --------------------------
+	<MaterialStart>
+		ID 			=	2			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle
+			
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+	
+	<MaterialEnd>
+	
+	# --------------------------
+	#  OVERRIDING PLATE RIDGE CRUST
+	# --------------------------
+	<MaterialStart>
+		ID 			=	3			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Maryland_strong_diabase-Mackwell_et_al_1998
+		
+		ch			=	5e6		# cohesion [MPa]
+		fr 			=	0			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+		
+			
+	<MaterialEnd>
+	
+	# --------------------------
+	#  OVERRIDING PLATE RIDGE MANTLE
+	# --------------------------
+	<MaterialStart>
+		ID 			=	4			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle
+			
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+	
+	<MaterialEnd>
+
+	# --------------------------
+	#  SUBDUCTING PLATE CRUST
+	# --------------------------
+	<MaterialStart>
+		ID 			=	5			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Maryland_strong_diabase-Mackwell_et_al_1998
+		
+		ch			=	5e6		# cohesion [MPa]
+		fr 			=	0  			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+			
+		
+	<MaterialEnd>
+	
+	# --------------------------
+	#  SUBDUCTING PLATE MANTLE
+	# --------------------------
+	<MaterialStart>
+		ID 			=	6			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle
+			
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+	
+	<MaterialEnd>
+	
+	# --------------------------
+	#  OVERRIDING PLATE CRUST
+	# --------------------------
+	<MaterialStart>
+		ID 			=	7			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Maryland_strong_diabase-Mackwell_et_al_1998
+		
+		ch			=	5e6		# cohesion [MPa]
+		fr 			=	0			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+		
+			
+	<MaterialEnd>
+	
+	# --------------------------
+	#  OVERRIDING PLATE MANTLE 
+	# --------------------------
+	<MaterialStart>
+		ID 			=	8			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle
+			
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+	
+	<MaterialEnd>
+
+
+	# --------------------------
+	#  ARC CRUST
+	# --------------------------
+	
+	<MaterialStart>
+		ID 			=	9			# phase id  [-]
+		rho        	= 	2800		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Quarzite-Ranalli_1995
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+			
+	<MaterialEnd>
+	
+	# --------------------------
+	#  ARC MANTLE
+	# --------------------------
+	
+	<MaterialStart>
+		ID 			=	10			# phase id  [-]
+		rho        	= 	3240		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle
+		
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+
+	<MaterialEnd>
+	
+
+	# --------------------------
+	#  PLATEAU CRUST #1
+	# --------------------------
+	
+	<MaterialStart>
+		ID 			=	11			# phase id  [-]
+		rho        	= 	2800		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Quarzite-Ranalli_1995
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+			
+	<MaterialEnd>
+	
+	# --------------------------
+	#  PLATEAU CRUST #2
+	# --------------------------
+	<MaterialStart>
+		ID 			=	12			# phase id  [-]
+		rho        	= 	2800		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Quarzite-Ranalli_1995
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+			
+	<MaterialEnd>
+	
+	# --------------------------
+	#  PLATEAU MANTLE
+	# --------------------------
+	<MaterialStart>
+		ID 			=	13			# phase id  [-]
+		rho        	= 	3220		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	20			# friction angle
+		
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+
+	<MaterialEnd>
+	
+
+ 	# --------------------------
+	#  PLATEAU SURROUNDING CRUST
+	# --------------------------
+	<MaterialStart>
+		ID 			=	14			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+
+		disl_prof 	= 	Maryland_strong_diabase-Mackwell_et_al_1998
+		
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	2			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+			
+#		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+#		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+		
+	<MaterialEnd>
+	
+	# --------------------------
+	#  PLATEAU SURROUNDING MANTLE
+	# --------------------------
+	
+	<MaterialStart>
+		ID 			=	15			# phase id  [-]
+		rho        	= 	3300		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+		
+		disl_prof 	= 	Dry_Olivine_disl_creep-Hirth_Kohlstedt_2003
+		Vn 			=	13.5e-6
+		
+		diff_prof 	=	Dry_Olivine_diff_creep-Hirth_Kohlstedt_2003
+		Vd 			=	13.5e-6
+		
+		G 			=	5e10		# elastic shear module [MPa]
+
+		# Thermal properties
+        k           =    3        	# conductivity
+        Cp        	=    1050       # heat capacity
+	
+		ch			=	30e6		# cohesion [MPa]
+		fr 			=	2			# friction angle
+			
+		chSoftID  	= 	0      # cohesion APS1 = 0.01 law ID
+		frSoftID  	= 	0      # friction APS1 = 0.01 law ID
+	
+	<MaterialEnd>
+
+	# --------------------------
+	# INITIAL WEAK ZONE ABOVE SUBDUCTION ZONE
+	# --------------------------
+	<MaterialStart>
+		ID 			=	16			# phase id  [-]
+		rho        	= 	3200		# density [kg/m3]
+		alpha  	 	= 	3e-5 		# coeff. of thermal expansion [1/K]
+	
+		eta 		=	1e19
+
+		ch			=	5e6		# cohesion [MPa]
+		fr 			=	0			# friction angle	
+		
+		G 			=	5e10		# elastic shear module [MPa]
+		
+        # Thermal properties
+        k			=    3        	# conductivity
+        Cp          =    1050       # heat capacity
+        
+	<MaterialEnd>
+
+	# --------------------------
+	# STICKY AIR (FREE SURFACE LAYER)
+	# --------------------------
+	<MaterialStart>
+		ID 			=	17			# phase id  [-]
+		rho        	= 	1000		# density - if dimensional [kg/m3]
+		eta			= 	1e19		# viscosity - if dimensional [Pa.s]
+			
+		# Thermal properties
+        k           =   100        	# conductivity
+        Cp          =   1e6        	# heat capacity - should be artificially large for sticky air
+
+		G 			=	5e10
+        
+		ch                      =       10e6                    # cohesion [MPa]
+        fr                      =       0                       # friction angle
+	<MaterialEnd>
+	
+	
+# ----------------------------------------------------
+# PETSC OPTIONS (SOLVER)
+# ----------------------------------------------------
+
+<PetscOptionsStart>
+	
+	# Print residuals and divergence after every timestep
+	-res_log
+
+	# Fine-tune solver options here (add command-line Petsc Options)
+	
+	# LINEAR & NONLINEAR SOLVER OPTIONS --------------------------------------------------
+	# SNES (nonlinear) options
+	
+	-snes_PicardSwitchToNewton_rtol 1e-3 		# relative tolerance to switch to Newton (1e-2)
+	-snes_NewtonSwitchToPicard_it  	35 			# number of Newton iterations after which we switch back to Picard until the residual is reduced to snes_PicardSwitchToNewton_rtol (35)
+	-snes_NewtonSwitchToPicard_rtol 1.1			# relative tolerance compared to first iteration step after which to switch to Picard again (1.1) 
+
+	
+	-snes_ksp_ew			# Eisenstat Walker algorithm
+	-snes_ksp_ew_rtol0 1e-4
+	-snes_ksp_ew_rtolmax 1e-1
+	#-snes_npicard 2			# 2 picard iterations @ beginning of ever timestep
+	-snes_monitor			
+	-snes_atol 1e-4
+	-snes_rtol 1e-2
+	-snes_stol 1e-100
+	-snes_max_it 50
+	-snes_max_funcs 500000
+	-snes_max_linear_solve_fail 10000
+	#-mat_mffd_err 1e-4	
+	#-snes_type 		ksponly
+
+	# Linesearch options
+	-snes_linesearch_monitor
+	-snes_linesearch_type l2 			#Linesearch type (one of) shell basic l2 bt Cp (SNESLineSearchSetType)  [l2 seems to work better with VEP]
+	-snes_linesearch_maxstep 1.0		# very important to prevent the code from "blowing up"
+	
+	# Jacobian (linear) outer KSP
+	-js_ksp_type fgmres
+	-js_ksp_max_it 30
+	-js_ksp_min_it 4
+	-js_ksp_converged_reason
+ 	-js_ksp_monitor
+	-js_ksp_rtol 1e-8
+	-js_ksp_atol 1e-10
+	
+	# Stokes Preconditioner
+	-pstokes mg					# multigrid
+
+	# Matrix type
+	-pcmat_type mono			# monolithic matrix [coupled MG solver]
+	-jp_type mg					# multigrid 
+
+	# Multigrid preconditioner settings
+	-gmg_pc_type mg
+	-gmg_pc_mg_levels 4			# 5 MG levels, gives coarse grid of 32x16x8	
+	-gmg_pc_mg_galerkin			# 	
+	-gmg_pc_mg_type multiplicative
+	-gmg_pc_mg_cycle_type v
+	#-gmg_pc_view 
+	-gmg_pc_mg_log				# monitors time spend in multigrid if using -log_summary @ the end
+	
+	
+	# RICHARDSON/JACOBI MG Smoothener - [Anton's favorite options]
+#	-gmg_mg_levels_ksp_type richardson
+#	-gmg_mg_levels_ksp_richardson_scale 0.6
+#	-gmg_mg_levels_pc_type jacobi
+	-gmg_mg_levels_ksp_max_it 5
+	
+
+	# DIRECT, REDUNDANT COARSE SOLVER
+   	#-crs_ksp_type preonly
+    -crs_pc_type redundant
+	-crs_pc_redundant_number 12								# split domain in 4 pieces so ever direct solver step is done on 512 cores
+	-crs_redundant_pc_factor_mat_solver_package superlu_dist		# uses mumps as local direct solver	[superlu_dist is another option]
+    #-crs_redundant_pc_factor_mat_solver_package mumps                # uses mumps as local direct solver     [superlu_dist is another option]
+
+  	#-crs_ksp_type preonly
+    #-crs_pc_type lu
+	#-crs_pc_factor_mat_solver_package superlu_dist		# uses mumps as local direct solver	[superlu_dist is another option]
+
+
+
+
+#==DIRECT SOLVER
+#	-js_ksp_type fgmres
+#	-js_ksp_max_it 20000
+#	-js_ksp_converged_reason
+#	-js_ksp_monitor
+#	-js_ksp_rtol 1e-20
+#	-js_ksp_atol 1e-6
+	
+	
+#	-pcmat_type mono
+#	-pcmat_pgamma 1e5
+
+#	-jp_type user
+#	-jp_pc_type lu
+#	-jp_pc_factor_mat_solver_package superlu_dist
+#=============
+
+
+
+   
+	-objects_dump
+	
+	
+<PetscOptionsEnd>
+
+
